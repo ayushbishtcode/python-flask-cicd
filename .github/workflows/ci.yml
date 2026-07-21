@@ -19,3 +19,11 @@ jobs:
       - run: pip install -r requirements.txt
 
       - run: python -m pytest --cov=app -v
+
+    build:
+      needs: test
+      runs-on: ubuntu-latest
+
+      steps:
+        -uses: actions/checkout@v4
+        -run: docker build -t flask-ci-app
