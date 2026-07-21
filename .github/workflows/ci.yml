@@ -16,14 +16,18 @@ jobs:
         with:
           python-version: "3.14"
 
-      - run: pip install -r requirements.txt
+      - run: python -m pip install --upgrade pip
+
+      - run: python -m pip install -r requirements.txt
 
       - run: python -m pytest --cov=app -v
 
-    build:
-      needs: test
-      runs-on: ubuntu-latest
+  build:
+    needs: test
 
-      steps:
-        -uses: actions/checkout@v4
-        -run: docker build -t flask-ci-app
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker build -t flask-ci-app:latest .
