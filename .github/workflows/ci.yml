@@ -71,6 +71,16 @@ jobs:
           echo "Event: ${{ github.event_name }}"
           echo "Actor: ${{ github.actor }}"
 
+      - name: Check OIDC Environment
+        run: |
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
+
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN exists: YES"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN exists: NO"
+          fi
+
       - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
