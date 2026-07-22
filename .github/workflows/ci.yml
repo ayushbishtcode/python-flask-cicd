@@ -71,15 +71,36 @@ jobs:
           echo "Event: ${{ github.event_name }}"
           echo "Actor: ${{ github.actor }}"
 
-      - name: Check OIDC Environment
+      - name: Inspect OIDC Token Claims
+        shell: bash
         run: |
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
+          TOKEN_RESPONSE=$(curl -s \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
 
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
-            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN exists: YES"
-          else
-            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN exists: NO"
-          fi
+          TOKEN=$(echo "$TOKEN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['value'])")
+
+          python3 - "$TOKEN" <<'PY'
+          import base64
+          import json
+          import sys
+
+          token = sys.argv[1]
+
+          payload = token.split('.')[1]
+          payload += '=' * (-len(payload) % 4)
+
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+
+          print("========== OIDC CLAIMS ==========")
+          print("sub:", claims.get("sub"))
+          print("aud:", claims.get("aud"))
+          print("repository:", claims.get("repository"))
+          print("repository_owner:", claims.get("repository_owner"))
+          print("ref:", claims.get("ref"))
+          print("event_name:", claims.get("event_name"))
+          print("workflow:", claims.get("workflow"))
+          PY
 
       - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v5
