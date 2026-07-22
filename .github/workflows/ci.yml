@@ -58,18 +58,21 @@ jobs:
 
   build-and-push:
     needs: test
-
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Debug OIDC Token
-        uses: github/actions-oidc-debugger@v1
+      - name: Print GitHub Context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
 
       - name: Configure AWS Credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::374894298799:role/GitHubActions-ECR-Role
           aws-region: ap-south-1
