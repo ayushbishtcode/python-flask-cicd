@@ -126,36 +126,30 @@ jobs:
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-            - name: Notify Slack Success
+      - name: Notify Slack Success
         if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H "Content-type: application/json" \
-          --data "{
-            \"text\": \"✅ *CI/CD Pipeline Succeeded*\n\n\
-            *Repository:* ${{ github.repository }}\n\
-            *Branch:* ${{ github.ref_name }}\n\
-            *Commit:* ${{ github.sha }}\n\
-            *Author:* ${{ github.actor }}\n\
-            *Workflow:* ${{ github.workflow }}\n\
-            *Run Number:* #${{ github.run_number }}\n\n\
-            🚀 Docker image has been pushed to Amazon ECR successfully.\n\n\
-            🔗 Workflow Logs:\n\
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
-          }" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d "$(cat <<EOF
+          {
+            "text": "✅ *CI/CD Pipeline Succeeded*\n\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nWorkflow: ${{ github.workflow }}\nRun Number: #${{ github.run_number }}\n\n🚀 Docker image pushed to Amazon ECR successfully.\n\n🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          )"
 
       - name: Notify Slack Failure
         if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H "Content-type: application/json" \
-          --data "{
-            \"text\": \"❌ *CI/CD Pipeline Failed*\n\n\
-            *Repository:* ${{ github.repository }}\n\
-            *Branch:* ${{ github.ref_name }}\n\
-            *Author:* ${{ github.actor }}\n\
-            *Workflow:* ${{ github.workflow }}\n\
-            *Run Number:* #${{ github.run_number }}\n\n\
-            🔗 Check the workflow logs:\n\
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
-          }" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d "$(cat <<EOF
+          {
+            "text": "❌ *CI/CD Pipeline Failed*\n\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nWorkflow: ${{ github.workflow }}\nRun Number: #${{ github.run_number }}\n\n🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          )"
