@@ -125,3 +125,37 @@ jobs:
         run: |
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+            - name: Notify Slack Success
+        if: success()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data "{
+            \"text\": \"✅ *CI/CD Pipeline Succeeded*\n\n\
+            *Repository:* ${{ github.repository }}\n\
+            *Branch:* ${{ github.ref_name }}\n\
+            *Commit:* ${{ github.sha }}\n\
+            *Author:* ${{ github.actor }}\n\
+            *Workflow:* ${{ github.workflow }}\n\
+            *Run Number:* #${{ github.run_number }}\n\n\
+            🚀 Docker image has been pushed to Amazon ECR successfully.\n\n\
+            🔗 Workflow Logs:\n\
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+          }" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack Failure
+        if: failure()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data "{
+            \"text\": \"❌ *CI/CD Pipeline Failed*\n\n\
+            *Repository:* ${{ github.repository }}\n\
+            *Branch:* ${{ github.ref_name }}\n\
+            *Author:* ${{ github.actor }}\n\
+            *Workflow:* ${{ github.workflow }}\n\
+            *Run Number:* #${{ github.run_number }}\n\n\
+            🔗 Check the workflow logs:\n\
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+          }" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
