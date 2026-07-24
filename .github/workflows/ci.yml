@@ -64,44 +64,6 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Print GitHub Context
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Event: ${{ github.event_name }}"
-          echo "Actor: ${{ github.actor }}"
-
-      - name: Inspect OIDC Token Claims
-        shell: bash
-        run: |
-          TOKEN_RESPONSE=$(curl -s \
-            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
-
-          TOKEN=$(echo "$TOKEN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['value'])")
-
-          python3 - "$TOKEN" <<'PY'
-          import base64
-          import json
-          import sys
-
-          token = sys.argv[1]
-
-          payload = token.split('.')[1]
-          payload += '=' * (-len(payload) % 4)
-
-          claims = json.loads(base64.urlsafe_b64decode(payload))
-
-          print("========== OIDC CLAIMS ==========")
-          print("sub:", claims.get("sub"))
-          print("aud:", claims.get("aud"))
-          print("repository:", claims.get("repository"))
-          print("repository_owner:", claims.get("repository_owner"))
-          print("ref:", claims.get("ref"))
-          print("event_name:", claims.get("event_name"))
-          print("workflow:", claims.get("workflow"))
-          PY
-
       - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
@@ -153,3 +115,21 @@ jobs:
           }
           EOF
           )"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            echo "✅ Connected Successfully!"
+            whoami
+            hostname
+            pwd
