@@ -129,7 +129,18 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
 
           script: |
-            echo "✅ Connected Successfully!"
-            whoami
-            hostname
-            pwd
+            aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 374894298799.dkr.ecr.ap-south-1.amazonaws.com
+
+            docker pull 374894298799.dkr.ecr.ap-south-1.amazonaws.com/python-flask-cicd:latest
+
+            docker stop flask-app || true
+
+            docker rm flask-app || true
+
+            docker run -d \
+              --name flask-app \
+              --restart unless-stopped \
+              -p 5001:5001 \
+              374894298799.dkr.ecr.ap-south-1.amazonaws.com/python-flask-cicd:latest
+
+            docker ps
